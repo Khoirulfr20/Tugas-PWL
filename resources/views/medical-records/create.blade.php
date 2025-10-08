@@ -709,4 +709,295 @@ function selectPatient(patient) {
         <h5 class="mb-1">${patient.name}</h5>
         <p class="mb-1">
             <span class="badge bg-secondary">${patient.patient_number}</span>
-            <span class="ms-2">${patient.gender === 'L' ? 'Laki-laki' :
+            <span class="ms-2">${patient.gender === 'L' ? 'Laki-laki' : 'Perempuan'}, ${patient.age} tahun</span>
+        </p>
+        <p class="mb-0 text-muted">
+            <i class="fas fa-phone me-1"></i>${patient.phone}
+            <i class="fas fa-map-marker-alt ms-3 me-1"></i>${patient.address}
+        </p>
+    `;
+    
+    document.getElementById('selected-patient-card').style.display = 'block';
+}
+
+function initializeStepNavigation() {
+    const steps = document.querySelectorAll('.form-step');
+    const nextBtns = document.querySelectorAll('.next-step');
+    const prevBtns = document.querySelectorAll('.prev-step');
+    
+    nextBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const currentStep = parseInt(this.closest('.form-step').id.split('-')[1]);
+            const nextStep = parseInt(this.dataset.next);
+            
+            if (validateStep(currentStep)) {
+                goToStep(nextStep);
+            }
+        });
+    });
+    
+    prevBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const prevStep = parseInt(this.dataset.prev);
+            goToStep(prevStep);
+        });
+    });
+}
+
+function validateStep(step) {
+    if (step === 1) {
+        const patientId = document.getElementById('patient_id').value;
+        const examDate = document.getElementById('examination_date').value;
+        
+        if (!patientId) {
+            alert('Silakan pilih pasien terlebih dahulu!');
+            document.getElementById('patient_search').focus();
+            return false;
+        }
+        
+        if (!examDate) {
+            alert('Silakan pilih tanggal pemeriksaan!');
+            document.getElementById('examination_date').focus();
+            return false;
+        }
+    }
+    
+    if (step === 2) {
+        const requiredFields = ['chief_complaint', 'history_present_illness', 'clinical_examination', 'diagnosis', 'treatment_plan', 'treatment_performed'];
+        
+        for (let field of requiredFields) {
+            const input = document.getElementById(field);
+            if (!input.value.trim()) {
+                alert('Silakan lengkapi semua field yang wajib diisi!');
+                input.focus();
+                return false;
+            }
+        }
+    }
+    
+    return true;
+}
+
+function goToStep(stepNumber) {
+    // Hide all steps
+    document.querySelectorAll('.form-step').forEach(step => {
+        step.style.display = 'none';
+    });
+    
+    // Show target step
+    document.getElementById(`step-${stepNumber}`).style.display = 'block';
+    
+    // Update progress indicators
+    document.querySelectorAll('.step').forEach((step, index) => {
+        const stepNum = index + 1;
+        step.classList.remove('active', 'completed');
+        
+        if (stepNum < stepNumber) {
+            step.classList.add('completed');
+        } else if (stepNum === stepNumber) {
+            step.classList.add('active');
+        }
+    });
+    
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function loadTreatments() {
+    fetch('/api/treatments')
+        .then(response => response.json())
+        .then(data => {
+            treatmentsList = data;
+        })
+        .catch(error => {
+            console.error('Error loading treatments:', error);
+        });
+}
+
+function initializeTreatmentManagement() {
+    document.getElementById('addTreatmentBtn').addEventListener('click', function() {
+        addTreatmentRow();
+    });
+}
+
+function addTreatmentRow() {
+    const container = document.getElementById('treatments-container');
+    const noTreatmentsMsg = document.getElementById('no-treatments-message');
+    
+    const index = treatmentIndex++;
+    
+    const treatmentHtml = `
+        <div class="treatment-item" id="treatment-${index}">
+            <div class="row align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label">Pilih Tindakan <span class="text-danger">*</span></label>
+                    <select class="form-select treatment-select" name="treatments[${index}][treatment_id]" 
+                            data-index="${index}" required>
+                        <option value="">-- Pilih Tindakan --</option>
+                        ${treatmentsList.map(t => `<option value="${t.id}" data-price="${t.price}">${t.name} - Rp ${formatNumber(t.price)}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Nomor Gigi</label>
+                    <input type="text" class="form-control" name="treatments[${index}][tooth_number]" 
+                           placeholder="Contoh: 16">
+                    <small class="text-muted">Opsional</small>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Qty <span class="text-danger">*</span></label>
+                    <input type="number" class="form-control treatment-qty" name="treatments[${index}][quantity]" 
+                           value="1" min="1" data-index="${index}" required>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Harga</label>
+                    <input type="text" class="form-control treatment-price" id="price-${index}" readonly>
+                </div>
+                <div class="col-md-2">
+                    <button type="button" class="btn btn-danger w-100" onclick="removeTreatment(${index})">
+                        <i class="fas fa-trash"></i> Hapus
+                    </button>
+                </div>
+            </div>
+            <div class="row mt-2">
+                <div class="col-12">
+                    <label class="form-label">Catatan</label>
+                    <textarea class="form-control" name="treatments[${index}][notes]" rows="2" 
+                              placeholder="Catatan khusus untuk tindakan ini (opsional)"></textarea>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    container.insertAdjacentHTML('beforeend', treatmentHtml);
+    noTreatmentsMsg.style.display = 'none';
+    
+    // Add event listeners
+    const select = document.querySelector(`select[data-index="${index}"]`);
+    const qtyInput = document.querySelector(`input.treatment-qty[data-index="${index}"]`);
+    
+    select.addEventListener('change', function() {
+        updateTreatmentPrice(index);
+    });
+    
+    qtyInput.addEventListener('input', function() {
+        updateTreatmentPrice(index);
+    });
+}
+
+function updateTreatmentPrice(index) {
+    const select = document.querySelector(`select[data-index="${index}"]`);
+    const qtyInput = document.querySelector(`input.treatment-qty[data-index="${index}"]`);
+    const priceInput = document.getElementById(`price-${index}`);
+    
+    const selectedOption = select.options[select.selectedIndex];
+    const price = parseFloat(selectedOption.dataset.price || 0);
+    const qty = parseInt(qtyInput.value || 1);
+    
+    const total = price * qty;
+    priceInput.value = `Rp ${formatNumber(total)}`;
+    
+    calculateTotalCost();
+}
+
+function removeTreatment(index) {
+    if (confirm('Hapus tindakan ini?')) {
+        document.getElementById(`treatment-${index}`).remove();
+        
+        const container = document.getElementById('treatments-container');
+        if (container.children.length === 0) {
+            document.getElementById('no-treatments-message').style.display = 'block';
+            document.getElementById('total-cost-card').style.display = 'none';
+        }
+        
+        calculateTotalCost();
+    }
+}
+
+function calculateTotalCost() {
+    let total = 0;
+    const priceInputs = document.querySelectorAll('.treatment-price');
+    
+    priceInputs.forEach(input => {
+        const value = input.value.replace(/[^0-9]/g, '');
+        total += parseInt(value || 0);
+    });
+    
+    document.getElementById('total-cost').textContent = `Rp ${formatNumber(total)}`;
+    
+    if (total > 0) {
+        document.getElementById('total-cost-card').style.display = 'block';
+    } else {
+        document.getElementById('total-cost-card').style.display = 'none';
+    }
+}
+
+function formatNumber(number) {
+    return new Intl.NumberFormat('id-ID').format(number);
+}
+
+function initializeImageUpload() {
+    const imageInput = document.getElementById('images');
+    const previewContainer = document.getElementById('image-preview');
+    
+    imageInput.addEventListener('change', function(e) {
+        previewContainer.innerHTML = '';
+        const files = Array.from(e.target.files);
+        
+        files.forEach((file, index) => {
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    const previewHtml = `
+                        <div class="col-md-3 image-preview-item">
+                            <img src="${e.target.result}" alt="Preview">
+                            <button type="button" class="remove-image-btn" onclick="removeImage(${index})">
+                                <i class="fas fa-times"></i>
+                            </button>
+                            <div class="mt-2">
+                                <select class="form-select form-select-sm" name="image_types[${index}]">
+                                    <option value="clinical">Clinical</option>
+                                    <option value="xray">X-Ray</option>
+                                    <option value="intraoral">Intraoral</option>
+                                    <option value="extraoral">Extraoral</option>
+                                </select>
+                            </div>
+                            <div class="mt-1">
+                                <input type="text" class="form-control form-control-sm" 
+                                       name="image_descriptions[${index}]" 
+                                       placeholder="Deskripsi gambar">
+                            </div>
+                        </div>
+                    `;
+                    previewContainer.insertAdjacentHTML('beforeend', previewHtml);
+                };
+                
+                reader.readAsDataURL(file);
+            }
+        });
+    });
+}
+
+function removeImage(index) {
+    const imageItems = document.querySelectorAll('.image-preview-item');
+    if (imageItems[index]) {
+        imageItems[index].remove();
+    }
+    
+    // Reset file input if no images left
+    if (document.querySelectorAll('.image-preview-item').length === 0) {
+        document.getElementById('images').value = '';
+    }
+}
+
+// Close search results when clicking outside
+document.addEventListener('click', function(e) {
+    const searchResults = document.getElementById('patient-search-results');
+    const searchInput = document.getElementById('patient_search');
+    
+    if (!searchResults.contains(e.target) && e.target !== searchInput) {
+        searchResults.style.display = 'none';
+    }
+});
+</script>
+@endpush

@@ -31,9 +31,9 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('medical-records', MedicalRecordController::class);
 
     // Treatment routes (admin only)
-    Route::middleware(['role:admin'])->group(function () {
-        Route::resource('treatments', TreatmentController::class);
-        Route::resource('users', UserController::class);
+    Route::middleware(['auth'])->group(function () {
+    Route::resource('treatments', TreatmentController::class);
+    Route::resource('users', UserController::class);
     });
 
     // Report routes

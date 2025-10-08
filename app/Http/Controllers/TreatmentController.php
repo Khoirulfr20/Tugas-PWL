@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
 use App\Models\Treatment;
 
 class TreatmentController extends Controller
@@ -58,4 +59,15 @@ class TreatmentController extends Controller
         $treatment->delete();
         return redirect()->route('treatments.index')->with('success', 'Tindakan berhasil dihapus.');
     }
+
+            // TreatmentController.php
+        public function __construct()
+       {
+           $this->middleware(function ($request, $next) {
+               if (!auth()->check() || !in_array(auth()->user()->role ?? '', ['admin'])) {
+                   abort(403);
+               }
+               return $next($request);
+           });
+}
 }
