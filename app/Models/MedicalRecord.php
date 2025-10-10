@@ -16,7 +16,7 @@ class MedicalRecord extends Model
     ];
 
     protected $casts = [
-        'examination_date' => 'date',
+        'examination_date' => 'datetime',
         'tooth_chart' => 'array',
     ];
 

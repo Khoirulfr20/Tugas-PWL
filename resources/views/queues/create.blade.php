@@ -211,7 +211,6 @@
 
 @push('scripts')
 <script>
-let patients = [];
 let selectedPatientId = '{{ old("patient_id", request("patient_id")) }}';
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -232,14 +231,11 @@ document.addEventListener('DOMContentLoaded', function() {
         loadNextQueueNumber(this.value);
     });
 
-    // Load patients for search
-    loadPatients();
-
     // Patient search
     let searchTimeout;
     patientSearchInput.addEventListener('input', function() {
         clearTimeout(searchTimeout);
-        const query = this.value.toLowerCase().trim();
+        const query = this.value.trim();
 
         if (query.length < 2) {
             searchResults.style.display = 'none';
@@ -247,13 +243,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         searchTimeout = setTimeout(() => {
-            const filtered = patients.filter(p => 
-                p.name.toLowerCase().includes(query) || 
-                p.patient_number.toLowerCase().includes(query) ||
-                p.phone.includes(query)
-            );
-
-            displaySearchResults(filtered);
+            fetch(`/api/patients?search=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    displaySearchResults(data);
+                })
+                .catch(error => {
+                    console.error('Error searching patients:', error);
+                });
         }, 300);
     });
 
@@ -275,23 +272,6 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('queueForm').addEventListener('submit', function(e) {
         if (!patientIdInput.value) {
             e.preventDefault();
-            alert('Silakan pilih pasien terlebih dahulu!');
-            patientSearchInput.focus();
-            return false;
-        }
-
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan...';
-    });
-
-    // Load selected patient if any
-    if (selectedPatientId) {
-        const patient = patients.find(p => p.id == selectedPatientId);
-        if (patient) {
-            selectPatient(patient);
-        }
-    }
-});
 
 function loadNextQueueNumber(date) {
     fetch(`/api/queues/next-number?date=${date}`)

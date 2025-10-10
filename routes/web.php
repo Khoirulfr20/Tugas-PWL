@@ -37,8 +37,14 @@ Route::middleware(['auth'])->group(function () {
     });
 
     // Report routes
-    Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
-    Route::get('/reports/patient-history/{patient}', [ReportController::class, 'patientHistory'])->name('reports.patient-history');
-    Route::get('/reports/daily', [ReportController::class, 'daily'])->name('reports.daily');
-    Route::get('/reports/monthly', [ReportController::class, 'monthly'])->name('reports.monthly');
+    // Report routes - URUTAN INI PENTING!
+Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+
+// Route STATIS harus di atas
+Route::get('/reports/daily', [ReportController::class, 'daily'])->name('reports.daily');
+Route::get('/reports/monthly', [ReportController::class, 'monthly'])->name('reports.monthly');
+
+// Route dengan PARAMETER di paling bawah
+Route::get('/reports/patient-history/{patient}', [ReportController::class, 'patientHistory'])
+    ->name('reports.patient-history');
 });

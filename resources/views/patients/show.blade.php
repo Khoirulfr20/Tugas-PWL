@@ -448,15 +448,4 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-@endpush<div class="card border-left-primary h-100">
-                                    <div class="card-body">
-                                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                            Total Kunjungan
-                                        </div>
-                                        <div class="h4 mb-0 font-weight-bold text-gray-800">
-                                            {{ $patient->medicalRecords->count() }}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6 mb-3">
+@endpush

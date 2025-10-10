@@ -69,6 +69,12 @@ class PatientController extends Controller
         return redirect()->route('patients.index')->with('success', 'Data pasien berhasil diperbarui.');
     }
 
+    public function destroy(Patient $patient)
+    {
+        $patient->delete();
+        return redirect()->route('patients.index')->with('success', 'Pasien berhasil dihapus.');
+    }
+
     private function generatePatientNumber()
     {
         $year = date('Y');
