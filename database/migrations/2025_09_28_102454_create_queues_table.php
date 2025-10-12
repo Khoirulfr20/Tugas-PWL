@@ -18,6 +18,9 @@ class CreateQueuesTable extends Migration
             $table->timestamp('called_at')->nullable();
             $table->timestamp('completed_at')->nullable();
             $table->timestamps();
+
+            $table->index(['queue_date', 'queue_number']);
+            $table->index(['queue_date', 'status']);
         });
     }
 

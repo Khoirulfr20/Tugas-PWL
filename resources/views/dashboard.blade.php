@@ -1,7 +1,4 @@
-<!-- resources/views/dashboard.blade.php -->
-<!-- HALAMAN DASHBOARD UTAMA APLIKASI -->
-<!-- ================================= -->
-
+{{-- resources/views/dashboard.blade.php --}}
 @extends('layouts.app')
 
 @section('title', 'Dashboard')
@@ -22,9 +19,9 @@
                 <i class="fas fa-print"></i> Print
             </button>
         </div>
-        <button type="button" class="btn btn-sm btn-primary">
+        <a href="{{ route('patients.create') }}" class="btn btn-sm btn-primary">
             <i class="fas fa-plus"></i> Tambah Pasien
-        </button>
+        </a>
     </div>
 </div>
 
@@ -60,7 +57,7 @@
                         <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
                             Antrian Hari Ini
                         </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="today-queue-count">
                             {{ number_format($stats['today_queue']) }}
                         </div>
                     </div>
@@ -81,7 +78,7 @@
                         <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
                             Menunggu
                         </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="waiting-queue-count">
                             {{ number_format($stats['waiting_queue']) }}
                         </div>
                         <div class="small text-muted">
@@ -223,7 +220,7 @@
                     <div class="me-3">
                         <small class="text-muted">
                             <i class="fas fa-sync-alt me-1" id="refresh-icon"></i>
-                            Real-time
+                            Auto-refresh (60s)
                         </small>
                     </div>
                     <a href="{{ route('queues.index') }}" class="btn btn-sm btn-primary">
@@ -266,7 +263,7 @@
                                 </td>
                                 <td>
                                     <span class="badge badge-status 
-                                        {{ $queue->status === 'waiting' ? 'bg-warning' : 
+                                        {{ $queue->status === 'waiting' ? 'bg-warning text-dark' : 
                                            ($queue->status === 'in_progress' ? 'bg-info' : 
                                            ($queue->status === 'completed' ? 'bg-success' : 'bg-secondary')) }}">
                                         @switch($queue->status)
@@ -274,7 +271,7 @@
                                                 <i class="fas fa-clock me-1"></i>Menunggu
                                                 @break
                                             @case('in_progress')
-                                                <i class="fas fa-spinner fa-spin me-1"></i>Sedang Dilayani
+                                                <i class="fas fa-spinner me-1"></i>Sedang Dilayani
                                                 @break
                                             @case('completed')
                                                 <i class="fas fa-check me-1"></i>Selesai
@@ -386,7 +383,7 @@
                     </div>
                     
                     <div class="col-md-3 col-sm-6 mb-3">
-                        <a href="{{ route('medical-records.create') }}" class="btn btn-outline-info btn-lg w-100 h-100">
+                        <a href="#" class="btn btn-outline-info btn-lg w-100 h-100">
                             <div class="text-center py-3">
                                 <i class="fas fa-file-medical-alt fa-2x mb-2"></i>
                                 <br>
@@ -398,7 +395,7 @@
                     </div>
                     
                     <div class="col-md-3 col-sm-6 mb-3">
-                        <a href="{{ route('reports.index') }}" class="btn btn-outline-warning btn-lg w-100 h-100">
+                        <a href="#" class="btn btn-outline-warning btn-lg w-100 h-100">
                             <div class="text-center py-3">
                                 <i class="fas fa-chart-bar fa-2x mb-2"></i>
                                 <br>
@@ -495,33 +492,19 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Real-time queue updates menggunakan Pusher
-    @if(config('broadcasting.default') === 'pusher')
-    try {
-        const pusher = new Pusher('{{ config("broadcasting.connections.pusher.key") }}', {
-            cluster: '{{ config("broadcasting.connections.pusher.options.cluster") }}'
-        });
-
-        const channel = pusher.subscribe('queue-updates');
-        channel.bind('queue.updated', function(data) {
-            updateQueueRow(data);
-            
-            // Add visual feedback for real-time update
-            const refreshIcon = document.getElementById('refresh-icon');
+    // ✅ AUTO-REFRESH STATISTICS SETIAP 60 DETIK
+    setInterval(function() {
+        refreshDashboardStats();
+        
+        // Add visual feedback
+        const refreshIcon = document.getElementById('refresh-icon');
+        if (refreshIcon) {
             refreshIcon.classList.add('spin');
             setTimeout(() => {
                 refreshIcon.classList.remove('spin');
             }, 1000);
-        });
-    } catch (error) {
-        console.log('Pusher not configured or error:', error);
-    }
-    @endif
-
-    // Auto refresh dashboard stats every 5 minutes
-    setInterval(function() {
-        refreshDashboardStats();
-    }, 300000); // 5 minutes
+        }
+    }, 60000); // 60 detik
 });
 
 // Function to update queue status
@@ -544,14 +527,12 @@ function updateQueueStatus(queueId, status) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Show success message
                 showAlert('success', data.message);
                 
-                // Update row immediately (before real-time update)
-                const row = document.querySelector(`tr[data-queue-id="${queueId}"]`);
-                if (row) {
-                    updateQueueRowStatus(row, status);
-                }
+                // Reload page after 1 second to see changes
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
             } else {
                 showAlert('danger', 'Terjadi kesalahan saat memperbarui status');
             }
@@ -561,101 +542,6 @@ function updateQueueStatus(queueId, status) {
             showAlert('danger', 'Terjadi kesalahan saat memperbarui status');
         });
     }
-}
-
-// Function to update queue row in real-time
-function updateQueueRow(data) {
-    const row = document.querySelector(`tr[data-queue-id="${data.id}"]`);
-    if (row) {
-        const statusCell = row.querySelector('.badge-status');
-        const timeCell = row.cells[3];
-        const actionCell = row.cells[4];
-        
-        // Update status badge
-        updateStatusBadge(statusCell, data.status);
-        
-        // Update time
-        updateTimeCell(timeCell, data);
-        
-        // Update action buttons
-        updateActionButtons(actionCell, data.id, data.status);
-        
-        // Add highlight effect
-        row.style.backgroundColor = '#fff3cd';
-        setTimeout(() => {
-            row.style.backgroundColor = '';
-        }, 2000);
-    }
-}
-
-function updateQueueRowStatus(row, status) {
-    const statusCell = row.querySelector('.badge-status');
-    updateStatusBadge(statusCell, status);
-    
-    const actionCell = row.cells[4];
-    updateActionButtons(actionCell, row.dataset.queueId, status);
-}
-
-function updateStatusBadge(badge, status) {
-    // Remove all status classes
-    badge.className = 'badge badge-status';
-    
-    const statusConfig = {
-        'waiting': { class: 'bg-warning', icon: 'fas fa-clock', text: 'Menunggu' },
-        'in_progress': { class: 'bg-info', icon: 'fas fa-spinner fa-spin', text: 'Sedang Dilayani' },
-        'completed': { class: 'bg-success', icon: 'fas fa-check', text: 'Selesai' },
-        'cancelled': { class: 'bg-secondary', icon: 'fas fa-times', text: 'Dibatalkan' }
-    };
-    
-    const config = statusConfig[status] || statusConfig['waiting'];
-    badge.classList.add(config.class);
-    badge.innerHTML = `<i class="${config.icon} me-1"></i>${config.text}`;
-}
-
-function updateTimeCell(cell, data) {
-    const now = new Date();
-    const timeStr = now.toTimeString().slice(0, 5);
-    
-    if (data.status === 'in_progress' && data.called_at) {
-        cell.innerHTML = `<small><span class="text-success"><i class="fas fa-play me-1"></i>${timeStr}</span></small>`;
-    } else if (data.status === 'completed' && data.completed_at) {
-        cell.innerHTML = `<small><span class="text-info"><i class="fas fa-check me-1"></i>${timeStr}</span></small>`;
-    }
-}
-
-function updateActionButtons(cell, queueId, status) {
-    let buttonsHtml = '<div class="btn-group btn-group-sm">';
-    
-    if (status === 'waiting') {
-        buttonsHtml += `
-            <button class="btn btn-success btn-sm" 
-                    onclick="updateQueueStatus(${queueId}, 'in_progress')"
-                    title="Panggil Pasien">
-                <i class="fas fa-play"></i>
-            </button>
-            <button class="btn btn-danger btn-sm" 
-                    onclick="updateQueueStatus(${queueId}, 'cancelled')"
-                    title="Batalkan">
-                <i class="fas fa-times"></i>
-            </button>
-        `;
-    } else if (status === 'in_progress') {
-        buttonsHtml += `
-            <button class="btn btn-info btn-sm" 
-                    onclick="updateQueueStatus(${queueId}, 'completed')"
-                    title="Selesai">
-                <i class="fas fa-check"></i>
-            </button>
-            <button class="btn btn-danger btn-sm" 
-                    onclick="updateQueueStatus(${queueId}, 'cancelled')"
-                    title="Batalkan">
-                <i class="fas fa-times"></i>
-            </button>
-        `;
-    }
-    
-    buttonsHtml += '</div>';
-    cell.innerHTML = buttonsHtml;
 }
 
 function showAlert(type, message) {
@@ -682,8 +568,8 @@ function showAlert(type, message) {
 }
 
 function refreshDashboardStats() {
-    // Fetch updated stats without page reload
-    fetch('/dashboard/stats', {
+    // Fetch updated stats via AJAX
+    fetch('/queues/ajax-stats', {
         headers: {
             'X-Requested-With': 'XMLHttpRequest'
         }
@@ -691,13 +577,11 @@ function refreshDashboardStats() {
     .then(response => response.json())
     .then(data => {
         // Update stat numbers
-        document.querySelector('.text-primary + .h5').textContent = data.total_patients.toLocaleString();
-        document.querySelector('.text-success + .h5').textContent = data.today_queue.toLocaleString();
-        document.querySelector('.text-warning + .h5').textContent = data.waiting_queue.toLocaleString();
-        document.querySelector('.text-info + .h5').textContent = data.today_examinations.toLocaleString();
+        document.getElementById('today-queue-count').textContent = data.total.toLocaleString();
+        document.getElementById('waiting-queue-count').textContent = data.waiting.toLocaleString();
     })
     .catch(error => {
-        console.log('Error refreshing stats:', error);
+        console.log('Stats refresh skipped:', error);
     });
 }
 </script>

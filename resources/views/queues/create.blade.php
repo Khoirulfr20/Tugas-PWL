@@ -1,4 +1,4 @@
-<!-- resources/views/queues/create.blade.php -->
+{{-- resources/views/queues/create.blade.php --}}
 @extends('layouts.app')
 
 @section('title', 'Tambah Antrian Baru')
@@ -16,6 +16,21 @@
         </a>
     </div>
 </div>
+
+<!-- Alert Messages -->
+@if(session('success'))
+<div class="alert alert-success alert-dismissible fade show" role="alert">
+    <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+@endif
+
+@if(session('error'))
+<div class="alert alert-danger alert-dismissible fade show" role="alert">
+    <i class="fas fa-exclamation-circle me-2"></i>{{ session('error') }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+@endif
 
 <!-- FORM CARD -->
 <div class="row">
@@ -82,7 +97,7 @@
                         </label>
                         <div class="input-group">
                             <input type="text" 
-                                   class="form-control" 
+                                   class="form-control @error('patient_id') is-invalid @enderror" 
                                    id="patient_search" 
                                    placeholder="Ketik nama atau nomor pasien..."
                                    autocomplete="off">
@@ -91,6 +106,9 @@
                             </button>
                         </div>
                         <div id="search-results" class="list-group mt-2" style="display: none;"></div>
+                        @error('patient_id')
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                        @enderror
                     </div>
 
                     <!-- Selected Patient Display -->
@@ -111,10 +129,6 @@
                             </div>
                         </div>
                     </div>
-
-                    @error('patient_id')
-                        <div class="alert alert-danger">{{ $message }}</div>
-                    @enderror
 
                     <!-- Quick Link -->
                     <div class="text-center mt-3">
@@ -182,6 +196,8 @@
         position: absolute;
         z-index: 1000;
         width: calc(100% - 24px);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        background: white;
     }
     
     .list-group-item {
@@ -211,7 +227,8 @@
 
 @push('scripts')
 <script>
-let selectedPatientId = '{{ old("patient_id", request("patient_id")) }}';
+// Global variable untuk menyimpan data pasien yang dipilih
+let selectedPatient = null;
 
 document.addEventListener('DOMContentLoaded', function() {
     const queueDateInput = document.getElementById('queue_date');
@@ -222,16 +239,23 @@ document.addEventListener('DOMContentLoaded', function() {
     const clearSearchBtn = document.getElementById('clearSearch');
     const changePatientBtn = document.getElementById('changePatient');
     const submitBtn = document.getElementById('submitBtn');
+    const queueForm = document.getElementById('queueForm');
 
-    // Load next queue number
+    // Load next queue number on page load
     loadNextQueueNumber(queueDateInput.value);
+
+    // Load patient if pre-selected (from old input or URL param)
+    const preselectedPatientId = patientIdInput.value;
+    if (preselectedPatientId) {
+        loadSelectedPatient(preselectedPatientId);
+    }
 
     // Update queue number when date changes
     queueDateInput.addEventListener('change', function() {
         loadNextQueueNumber(this.value);
     });
 
-    // Patient search
+    // Patient search with debounce
     let searchTimeout;
     patientSearchInput.addEventListener('input', function() {
         clearTimeout(searchTimeout);
@@ -244,12 +268,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
         searchTimeout = setTimeout(() => {
             fetch(`/api/patients?search=${encodeURIComponent(query)}`)
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return response.json();
+                })
                 .then(data => {
                     displaySearchResults(data);
                 })
                 .catch(error => {
                     console.error('Error searching patients:', error);
+                    searchResults.innerHTML = `
+                        <div class="list-group-item text-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Error loading patients
+                        </div>
+                    `;
+                    searchResults.style.display = 'block';
                 });
         }, 300);
     });
@@ -265,37 +298,75 @@ document.addEventListener('DOMContentLoaded', function() {
         selectedPatientDiv.style.display = 'none';
         patientSearchInput.value = '';
         patientIdInput.value = '';
+        selectedPatient = null;
         patientSearchInput.focus();
     });
 
-    // Form validation
-    document.getElementById('queueForm').addEventListener('submit', function(e) {
-        if (!patientIdInput.value) {
+    // Form validation before submit
+    queueForm.addEventListener('submit', function(e) {
+        const patientId = patientIdInput.value;
+        
+        console.log('Form submit - Patient ID:', patientId); // Debug log
+        
+        if (!patientId || patientId === '') {
             e.preventDefault();
+            alert('⚠️ Silakan pilih pasien terlebih dahulu!');
+            patientSearchInput.focus();
+            patientSearchInput.classList.add('is-invalid');
+            return false;
+        }
 
+        // Disable submit button to prevent double submission
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan...';
+        return true;
+    });
+
+    // Hide search results when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!searchResults.contains(e.target) && 
+            e.target !== patientSearchInput && 
+            e.target !== clearSearchBtn) {
+            searchResults.style.display = 'none';
+        }
+    });
+});
+
+// Load next queue number function
 function loadNextQueueNumber(date) {
+    const numberDisplay = document.getElementById('next-queue-number');
+    numberDisplay.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Loading...';
+    
     fetch(`/api/queues/next-number?date=${date}`)
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.json();
+        })
         .then(data => {
-            document.getElementById('next-queue-number').innerHTML = 
-                `<strong class="fs-3">${data.next_number}</strong>`;
+            numberDisplay.innerHTML = `<strong class="fs-3">${data.next_number}</strong>`;
         })
         .catch(error => {
-            document.getElementById('next-queue-number').textContent = 'Error loading';
+            console.error('Error loading queue number:', error);
+            numberDisplay.innerHTML = '<span class="text-danger">Error</span>';
         });
 }
 
-function loadPatients() {
-    fetch('/api/patients')
-        .then(response => response.json())
-        .then(data => {
-            patients = data;
+// Load selected patient (for pre-populated data)
+function loadSelectedPatient(patientId) {
+    fetch(`/api/patients/${patientId}`)
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.json();
+        })
+        .then(patient => {
+            selectPatient(patient);
         })
         .catch(error => {
-            console.error('Error loading patients:', error);
+            console.error('Error loading patient:', error);
         });
 }
 
+// Display search results
 function displaySearchResults(results) {
     const searchResults = document.getElementById('search-results');
     
@@ -310,9 +381,9 @@ function displaySearchResults(results) {
     }
 
     let html = '';
-    results.forEach(patient => {
+    results.forEach((patient, index) => {
         html += `
-            <div class="list-group-item list-group-item-action" onclick="selectPatient(${JSON.stringify(patient).replace(/"/g, '&quot;')})">
+            <div class="list-group-item list-group-item-action" data-patient-id="${patient.id}" data-index="${index}">
                 <div class="d-flex align-items-center">
                     <div class="patient-avatar me-3">
                         ${patient.name.substring(0, 1).toUpperCase()}
@@ -335,17 +406,35 @@ function displaySearchResults(results) {
 
     searchResults.innerHTML = html;
     searchResults.style.display = 'block';
+
+    // Add click event listeners to all patient items
+    searchResults.querySelectorAll('.list-group-item').forEach((item, index) => {
+        item.addEventListener('click', function() {
+            selectPatient(results[index]);
+        });
+    });
 }
 
+// Select patient function - FIXED VERSION
 function selectPatient(patient) {
+    console.log('Selecting patient:', patient); // Debug log
+    
     const patientIdInput = document.getElementById('patient_id');
     const selectedPatientDiv = document.getElementById('selected-patient');
     const patientInfo = document.getElementById('patient-info');
     const searchResults = document.getElementById('search-results');
     const patientSearchInput = document.getElementById('patient_search');
 
+    // Set the patient ID - THIS IS THE CRITICAL PART
     patientIdInput.value = patient.id;
+    selectedPatient = patient;
     
+    console.log('Patient ID set to:', patientIdInput.value); // Debug log
+    
+    // Remove invalid class if present
+    patientSearchInput.classList.remove('is-invalid');
+    
+    // Display patient info
     patientInfo.innerHTML = `
         <div>
             <strong class="fs-5">${patient.name}</strong>
@@ -361,19 +450,15 @@ function selectPatient(patient) {
         </div>
     `;
 
+    // Show selected patient section
     selectedPatientDiv.style.display = 'block';
     searchResults.style.display = 'none';
     patientSearchInput.value = patient.name;
-}
-
-// Hide search results when clicking outside
-document.addEventListener('click', function(e) {
-    const searchResults = document.getElementById('search-results');
-    const patientSearchInput = document.getElementById('patient_search');
     
-    if (!searchResults.contains(e.target) && e.target !== patientSearchInput) {
-        searchResults.style.display = 'none';
-    }
-});
+    // Verify the value is set
+    setTimeout(() => {
+        console.log('Verification - Patient ID in input:', document.getElementById('patient_id').value);
+    }, 100);
+}
 </script>
 @endpush

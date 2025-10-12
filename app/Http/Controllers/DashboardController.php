@@ -20,7 +20,11 @@ class DashboardController extends Controller
         ];
 
         $recent_patients = Patient::latest()->limit(5)->get();
-        $today_queue = Queue::today()->with('patient')->orderBy('queue_number')->get();
+        $today_queue = Queue::today()
+                           ->with('patient')
+                           ->orderBy('queue_number')
+                           ->limit(10)
+                           ->get();
 
         return view('dashboard', compact('stats', 'recent_patients', 'today_queue'));
     }

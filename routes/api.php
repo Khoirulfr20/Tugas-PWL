@@ -12,68 +12,110 @@ use App\Models\Queue;
 |--------------------------------------------------------------------------
 | API Routes
 |--------------------------------------------------------------------------
-| Routes untuk mendukung fitur AJAX di forms
+| IMPORTANT: Routes di file ini otomatis prefix '/api'
+| Jadi /api/patients sebenarnya dipanggil dari route 'patients' di bawah
 */
 
-// Get all patients (for search/autocomplete)
+// ✅ Get all patients (for search/autocomplete)
 Route::get('/patients', function (Request $request) {
-    $query = Patient::query();
-    
-    if ($request->has('search')) {
-        $search = $request->search;
-        $query->where(function($q) use ($search) {
-            $q->where('name', 'like', "%{$search}%")
-              ->orWhere('patient_number', 'like', "%{$search}%")
-              ->orWhere('phone', 'like', "%{$search}%");
-        });
+    try {
+        $query = Patient::query();
+        
+        if ($request->has('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('patient_number', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%");
+            });
+        }
+        
+        $patients = $query->orderBy('name')->limit(10)->get();
+        
+        return response()->json($patients);
+        
+    } catch (\Exception $e) {
+        \Log::error('API Patients Error: ' . $e->getMessage());
+        return response()->json([
+            'error' => 'Failed to load patients',
+            'message' => $e->getMessage()
+        ], 500);
     }
-    
-    $patients = $query->limit(10)->get();
-    
-    return response()->json($patients);
 });
 
-// Get single patient
+// ✅ Get single patient
 Route::get('/patients/{id}', function ($id) {
-    $patient = Patient::findOrFail($id);
-    return response()->json($patient);
+    try {
+        $patient = Patient::findOrFail($id);
+        return response()->json($patient);
+    } catch (\Exception $e) {
+        \Log::error('API Patient Detail Error: ' . $e->getMessage());
+        return response()->json([
+            'error' => 'Patient not found',
+            'message' => $e->getMessage()
+        ], 404);
+    }
 });
 
-// Get all treatments
+// ✅ Get all treatments
 Route::get('/treatments', function () {
-    $treatments = Treatment::where('is_active', true)
-                          ->orderBy('name')
-                          ->get();
-    
-    return response()->json($treatments);
+    try {
+        $treatments = Treatment::where('is_active', true)
+                              ->orderBy('name')
+                              ->get();
+        
+        return response()->json($treatments);
+    } catch (\Exception $e) {
+        \Log::error('API Treatments Error: ' . $e->getMessage());
+        return response()->json([
+            'error' => 'Failed to load treatments',
+            'message' => $e->getMessage()
+        ], 500);
+    }
 });
 
-// Get next queue number for a specific date
+// ✅ Get next queue number for a specific date
 Route::get('/queues/next-number', function (Request $request) {
-    $date = $request->input('date', today());
-    
-    $lastQueue = Queue::whereDate('queue_date', $date)
-                     ->max('queue_number');
-    
-    $nextNumber = ($lastQueue ?? 0) + 1;
-    
-    return response()->json([
-        'next_number' => $nextNumber,
-        'date' => $date
-    ]);
+    try {
+        $date = $request->input('date', today());
+        
+        $lastQueue = Queue::whereDate('queue_date', $date)
+                         ->max('queue_number');
+        
+        $nextNumber = ($lastQueue ?? 0) + 1;
+        
+        return response()->json([
+            'next_number' => $nextNumber,
+            'date' => $date
+        ]);
+    } catch (\Exception $e) {
+        \Log::error('API Queue Next Number Error: ' . $e->getMessage());
+        return response()->json([
+            'error' => 'Failed to get next queue number',
+            'message' => $e->getMessage()
+        ], 500);
+    }
 });
 
-// Get queue statistics (for dashboard real-time update)
+// ✅ Get queue statistics (for dashboard real-time update)
 Route::get('/queues/statistics', function (Request $request) {
-    $date = $request->input('date', today());
-    
-    $queues = Queue::whereDate('queue_date', $date)->get();
-    
-    return response()->json([
-        'total' => $queues->count(),
-        'waiting' => $queues->where('status', 'waiting')->count(),
-        'in_progress' => $queues->where('status', 'in_progress')->count(),
-        'completed' => $queues->where('status', 'completed')->count(),
-        'cancelled' => $queues->where('status', 'cancelled')->count(),
-    ]);
+    try {
+        $date = $request->input('date', today());
+        
+        $queues = Queue::whereDate('queue_date', $date)->get();
+        
+        return response()->json([
+            'total' => $queues->count(),
+            'waiting' => $queues->where('status', 'waiting')->count(),
+            'in_progress' => $queues->where('status', 'in_progress')->count(),
+            'completed' => $queues->where('status', 'completed')->count(),
+            'cancelled' => $queues->where('status', 'cancelled')->count(),
+        ]);
+    } catch (\Exception $e) {
+        \Log::error('API Queue Statistics Error: ' . $e->getMessage());
+        return response()->json([
+            'error' => 'Failed to load statistics',
+            'message' => $e->getMessage()
+        ], 500);
+    }
 });

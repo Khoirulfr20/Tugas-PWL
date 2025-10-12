@@ -24,8 +24,13 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('patients', PatientController::class);
 
     // Queue routes
-    Route::resource('queues', QueueController::class);
-    Route::patch('/queues/{queue}/status', [QueueController::class, 'updateStatus'])->name('queues.update-status');
+    Route::get('/queues', [QueueController::class, 'index'])->name('queues.index');
+    Route::get('/queues/create', [QueueController::class, 'create'])->name('queues.create');
+    Route::post('/queues', [QueueController::class, 'store'])->name('queues.store');
+    Route::get('/queues/{queue}', [QueueController::class, 'show'])->name('queues.show');
+    Route::patch('/queues/{queue}/status', [QueueController::class, 'updateStatus'])->name('queues.updateStatus');
+
+     Route::get('/queues/ajax-stats', [QueueController::class, 'getStatistics'])->name('queues.statistics');
 
     // Medical record routes
     Route::resource('medical-records', MedicalRecordController::class);
@@ -35,6 +40,7 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('treatments', TreatmentController::class);
     Route::resource('users', UserController::class);
     });
+
 
     // Report routes
     // Report routes - URUTAN INI PENTING!

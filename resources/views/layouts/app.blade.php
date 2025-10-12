@@ -297,8 +297,7 @@
                             </a>
                         </li>
 
-                        <!-- Rekam Medis -->
-                        <li class="nav-item">
+                       <li class="nav-item">
                             <a class="nav-link {{ request()->routeIs('medical-records.*') ? 'active' : '' }}" 
                                href="{{ route('medical-records.index') }}">
                                 <i class="fas fa-file-medical"></i>
@@ -391,8 +390,7 @@
     <!-- JAVASCRIPT LIBRARIES -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- Real-time Features (Pusher) -->
-    <script src="https://js.pusher.com/7.0/pusher.min.js"></script>
+    <!-- ❌ PUSHER SCRIPT DIHAPUS - TIDAK DIGUNAKAN LAGI -->
     
     <!-- Custom JavaScript -->
     <script>
@@ -433,12 +431,7 @@
             return confirm(message);
         }
 
-        // Real-time notifications (jika menggunakan Pusher)
-        @if(config('broadcasting.default') === 'pusher')
-        const pusher = new Pusher('{{ config("broadcasting.connections.pusher.key") }}', {
-            cluster: '{{ config("broadcasting.connections.pusher.options.cluster") }}'
-        });
-        @endif
+        // ❌ PUSHER INITIALIZATION DIHAPUS - TIDAK DIGUNAKAN LAGI
     </script>
 
     <!-- Additional Scripts dari child templates -->

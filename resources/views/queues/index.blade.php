@@ -1,4 +1,4 @@
-<!-- resources/views/queues/index.blade.php -->
+{{-- resources/views/queues/index.blade.php --}}
 @extends('layouts.app')
 
 @section('title', 'Kelola Antrian Pasien')
@@ -9,8 +9,8 @@
     <h1 class="h2">
         <i class="fas fa-list-ol me-2 text-primary"></i>
         Kelola Antrian Pasien
-        <span class="badge bg-info ms-2" id="realtime-badge">
-            <i class="fas fa-sync-alt"></i> Real-time
+        <span class="badge bg-info ms-2" id="refresh-badge">
+            <i class="fas fa-sync-alt"></i> Auto-refresh
         </span>
     </h1>
     <div class="btn-toolbar mb-2 mb-md-0">
@@ -74,10 +74,17 @@
 
 <!-- FILTER CARD -->
 <div class="card shadow mb-4">
-    <div class="card-header py-3">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center">
         <h6 class="m-0 font-weight-bold text-primary">
             <i class="fas fa-filter me-2"></i>Filter Antrian
         </h6>
+        <!-- Toggle Auto-refresh -->
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="autoRefreshToggle" checked>
+            <label class="form-check-label" for="autoRefreshToggle">
+                <small>Auto-refresh (30 detik)</small>
+            </label>
+        </div>
     </div>
     <div class="card-body">
         <form method="GET" action="{{ route('queues.index') }}" class="row g-3">
@@ -110,6 +117,9 @@
                     <a href="{{ route('queues.index') }}" class="btn btn-secondary">
                         <i class="fas fa-redo me-1"></i>Reset
                     </a>
+                    <button type="button" class="btn btn-success" onclick="window.location.reload()">
+                        <i class="fas fa-sync-alt me-1"></i>Refresh
+                    </button>
                 </div>
             </div>
         </form>
@@ -121,6 +131,9 @@
     <div class="card-header py-3">
         <h6 class="m-0 font-weight-bold text-primary">
             Daftar Antrian - {{ request('date', today()->format('d M Y')) }}
+            <small class="text-muted" id="last-update">
+                Terakhir diperbarui: {{ now()->format('H:i:s') }}
+            </small>
         </h6>
     </div>
     <div class="card-body">
@@ -166,7 +179,7 @@
                         </td>
                         <td>
                             <span class="badge badge-status 
-                                {{ $queue->status === 'waiting' ? 'bg-warning' : 
+                                {{ $queue->status === 'waiting' ? 'bg-warning text-dark' : 
                                    ($queue->status === 'in_progress' ? 'bg-info' : 
                                    ($queue->status === 'completed' ? 'bg-success' : 'bg-secondary')) }}">
                                 @switch($queue->status)
@@ -174,7 +187,7 @@
                                         <i class="fas fa-clock me-1"></i>Menunggu
                                         @break
                                     @case('in_progress')
-                                        <i class="fas fa-spinner fa-spin me-1"></i>Sedang Dilayani
+                                        <i class="fas fa-spinner me-1"></i>Sedang Dilayani
                                         @break
                                     @case('completed')
                                         <i class="fas fa-check me-1"></i>Selesai
@@ -293,7 +306,7 @@
         50% { opacity: 0.5; }
     }
     
-    #realtime-badge i {
+    #refresh-badge i {
         animation: pulse 2s infinite;
     }
     
@@ -310,24 +323,50 @@
 
 @push('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Real-time updates dengan Pusher
-    @if(config('broadcasting.default') === 'pusher')
-    try {
-        const pusher = new Pusher('{{ config("broadcasting.connections.pusher.key") }}', {
-            cluster: '{{ config("broadcasting.connections.pusher.options.cluster") }}'
-        });
+let autoRefreshInterval = null;
 
-        const channel = pusher.subscribe('queue-updates');
-        channel.bind('queue.updated', function(data) {
-            updateQueueRowRealtime(data);
-            updateStatistics();
-        });
-    } catch (error) {
-        console.log('Pusher not configured:', error);
-    }
-    @endif
+document.addEventListener('DOMContentLoaded', function() {
+    const autoRefreshToggle = document.getElementById('autoRefreshToggle');
+    
+    // Start auto-refresh by default
+    startAutoRefresh();
+    
+    // Toggle auto-refresh
+    autoRefreshToggle.addEventListener('change', function() {
+        if (this.checked) {
+            startAutoRefresh();
+        } else {
+            stopAutoRefresh();
+        }
+    });
 });
+
+function startAutoRefresh() {
+    // Refresh setiap 30 detik
+    autoRefreshInterval = setInterval(() => {
+        updateStatistics();
+        updateLastUpdateTime();
+    }, 30000); // 30 detik
+    
+    document.getElementById('refresh-badge').classList.remove('bg-secondary');
+    document.getElementById('refresh-badge').classList.add('bg-success');
+}
+
+function stopAutoRefresh() {
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+        autoRefreshInterval = null;
+    }
+    
+    document.getElementById('refresh-badge').classList.remove('bg-success');
+    document.getElementById('refresh-badge').classList.add('bg-secondary');
+}
+
+function updateLastUpdateTime() {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('id-ID');
+    document.getElementById('last-update').textContent = `Terakhir diperbarui: ${timeString}`;
+}
 
 function updateQueueStatus(queueId, status) {
     const confirmMessages = {
@@ -354,8 +393,11 @@ function updateQueueStatus(queueId, status) {
         .then(data => {
             if (data.success) {
                 showAlert('success', data.message);
-                updateQueueRowLocal(row, status);
-                updateStatistics();
+                
+                // Refresh halaman setelah 1 detik untuk lihat perubahan
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
             } else {
                 showAlert('danger', 'Terjadi kesalahan saat memperbarui status');
                 location.reload();
@@ -369,82 +411,10 @@ function updateQueueStatus(queueId, status) {
     }
 }
 
-function updateQueueRowLocal(row, status) {
-    const statusCell = row.querySelector('.badge-status');
-    const actionCell = row.querySelector('.action-buttons');
-    
-    // Update status badge
-    updateStatusBadge(statusCell, status);
-    
-    // Update action buttons
-    updateActionButtons(actionCell, row.dataset.queueId, status);
-    
-    // Add highlight effect
-    row.classList.add('queue-row-highlight');
-    setTimeout(() => row.classList.remove('queue-row-highlight'), 2000);
-}
-
-function updateQueueRowRealtime(data) {
-    const row = document.querySelector(`tr[data-queue-id="${data.id}"]`);
-    if (row) {
-        const statusCell = row.querySelector('.badge-status');
-        const timeCell = row.querySelector('.queue-time');
-        const actionCell = row.querySelector('.action-buttons');
-        
-        updateStatusBadge(statusCell, data.status);
-        updateActionButtons(actionCell, data.id, data.status);
-        
-        row.classList.add('queue-row-highlight');
-        setTimeout(() => row.classList.remove('queue-row-highlight'), 2000);
-    }
-}
-
-function updateStatusBadge(badge, status) {
-    badge.className = 'badge badge-status';
-    
-    const statusConfig = {
-        'waiting': { class: 'bg-warning', icon: 'fas fa-clock', text: 'Menunggu' },
-        'in_progress': { class: 'bg-info', icon: 'fas fa-spinner fa-spin', text: 'Sedang Dilayani' },
-        'completed': { class: 'bg-success', icon: 'fas fa-check', text: 'Selesai' },
-        'cancelled': { class: 'bg-secondary', icon: 'fas fa-times', text: 'Dibatalkan' }
-    };
-    
-    const config = statusConfig[status];
-    badge.classList.add(config.class);
-    badge.innerHTML = `<i class="${config.icon} me-1"></i>${config.text}`;
-}
-
-function updateActionButtons(cell, queueId, status) {
-    let buttonsHtml = '<div class="btn-group btn-group-sm action-buttons">';
-    
-    if (status === 'waiting') {
-        buttonsHtml += `
-            <button class="btn btn-success" onclick="updateQueueStatus(${queueId}, 'in_progress')" title="Panggil">
-                <i class="fas fa-play"></i>
-            </button>
-            <button class="btn btn-danger" onclick="updateQueueStatus(${queueId}, 'cancelled')" title="Batalkan">
-                <i class="fas fa-times"></i>
-            </button>
-        `;
-    } else if (status === 'in_progress') {
-        buttonsHtml += `
-            <button class="btn btn-info" onclick="updateQueueStatus(${queueId}, 'completed')" title="Selesai">
-                <i class="fas fa-check"></i>
-            </button>
-            <button class="btn btn-danger" onclick="updateQueueStatus(${queueId}, 'cancelled')" title="Batalkan">
-                <i class="fas fa-times"></i>
-            </button>
-        `;
-    } else {
-        buttonsHtml += '<span class="badge bg-secondary">-</span>';
-    }
-    
-    buttonsHtml += '</div>';
-    cell.innerHTML = buttonsHtml;
-}
-
 function updateStatistics() {
-    fetch(window.location.href, {
+    const currentDate = document.getElementById('date')?.value || '{{ today()->format("Y-m-d") }}';
+    
+    fetch(`/queues/ajax-stats?date=${currentDate}`, {
         headers: { 'X-Requested-With': 'XMLHttpRequest' }
     })
     .then(response => response.json())
@@ -453,6 +423,9 @@ function updateStatistics() {
         document.getElementById('waiting-count').textContent = data.waiting;
         document.getElementById('progress-count').textContent = data.in_progress;
         document.getElementById('completed-count').textContent = data.completed;
+    })
+    .catch(error => {
+        console.error('Error updating statistics:', error);
     });
 }
 
