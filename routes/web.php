@@ -9,6 +9,7 @@ use App\Http\Controllers\MedicalRecordController;
 use App\Http\Controllers\TreatmentController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\NotificationController;
 
 // Auth routes
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -41,6 +42,10 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('users', UserController::class);
     });
 
+    Route::prefix('notifications')->name('notifications.')->group(function () {
+    Route::get('/', [NotificationController::class, 'index'])->name('index');
+    Route::post('/clear', [NotificationController::class, 'clearAll'])->name('clear');
+    });
 
     // Report routes
     // Report routes - URUTAN INI PENTING!

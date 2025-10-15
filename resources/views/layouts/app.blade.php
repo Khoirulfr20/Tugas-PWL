@@ -214,21 +214,70 @@
             <button class="navbar-toggler d-lg-none" type="button" onclick="toggleSidebar()">
                 <span class="navbar-toggler-icon"></span>
             </button>
-            
-            <!-- Right Side Menu -->
-            <div class="navbar-nav ms-auto">
-                <!-- Notification Icon (Optional) -->
-                <div class="nav-item dropdown me-3">
-                    <a class="nav-link" href="#" role="button" data-bs-toggle="dropdown">
-                        <i class="fas fa-bell"></i>
-                        <span class="badge bg-danger badge-sm">3</span>
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="#">Antrian baru: John Doe</a></li>
-                        <li><a class="dropdown-item" href="#">Jadwal pemeriksaan besok</a></li>
-                        <li><a class="dropdown-item" href="#">Laporan bulanan siap</a></li>
-                    </ul>
+          
+<!-- Right Side Menu -->
+<div class="navbar-nav ms-auto d-flex align-items-center">            
+           <!-- 🔔 Notification Dropdown -->
+<div class="nav-item dropdown me-3">
+    <a class="nav-link position-relative" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="fas fa-bell"></i>
+
+        {{-- Badge Jumlah Notifikasi Baru --}}
+        @php
+            $unreadCount = \App\Helpers\NotificationHelper::getUnreadCount();
+        @endphp
+        @if($unreadCount > 0)
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                {{ $unreadCount }}
+            </span>
+        @endif
+    </a>
+
+    <ul class="dropdown-menu dropdown-menu-end shadow-lg" style="min-width: 300px;">
+        <li class="dropdown-header fw-bold">
+            Notifikasi Terbaru
+        </li>
+
+        @php
+            $notifications = array_slice(array_reverse(\App\Helpers\NotificationHelper::getAll()), 0, 5);
+        @endphp
+
+        @forelse($notifications as $notif)
+            <li>
+                <a href="{{ route('notifications.index') }}" class="dropdown-item d-flex align-items-start">
+                    <div class="me-2">
+                        <i class="{{ \App\Helpers\NotificationHelper::getIcon($notif['type']) }} text-primary"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="small fw-bold text-dark">
+                            {{ $notif['title'] }}
+                        </div>
+                        <div class="small text-muted">
+                            {{ $notif['message'] }}
+                        </div>
+                        <div class="small text-muted">
+                            <i class="far fa-clock"></i> {{ $notif['time_ago'] }}
+                        </div>
+                    </div>
+                </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+        @empty
+            <li>
+                <div class="dropdown-item text-center text-muted">
+                    <i class="fas fa-bell-slash"></i> Tidak ada notifikasi
                 </div>
+            </li>
+        @endforelse
+
+        <li>
+            <a class="dropdown-item text-center fw-bold text-primary" href="{{ route('notifications.index') }}">
+                <i class="fas fa-list"></i> Lihat Semua
+            </a>
+        </li>
+    </ul>
+</div>
+
 
                 <!-- User Dropdown -->
                 <div class="nav-item dropdown">

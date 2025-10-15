@@ -6,50 +6,61 @@ use Illuminate\Http\Request;
 use App\Models\Queue;
 use App\Models\Patient;
 use Carbon\Carbon;
+use App\Helpers\NotificationHelper; // 🔔 Tambahkan helper notifikasi
 
 class QueueController extends Controller
 {
+    /**
+     * Tampilkan daftar antrian
+     */
     public function index(Request $request)
     {
         $query = Queue::with('patient');
         
-        // Filter by date
+        // Filter tanggal
         $date = $request->input('date', today()->format('Y-m-d'));
         $query->whereDate('queue_date', $date);
         
-        // Filter by status
+        // Filter status
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
         
-        // Search by patient name
+        // Pencarian pasien
         if ($request->filled('search')) {
-            $query->whereHas('patient', function($q) use ($request) {
+            $query->whereHas('patient', function ($q) use ($request) {
                 $q->where('name', 'like', '%' . $request->search . '%');
             });
         }
         
         $queues = $query->orderBy('queue_number')->get();
-        
-        // AJAX request untuk statistics update (auto-refresh)
+
+        // AJAX untuk statistik
         if ($request->ajax()) {
             return response()->json([
                 'total' => $queues->count(),
                 'waiting' => $queues->where('status', 'waiting')->count(),
                 'in_progress' => $queues->where('status', 'in_progress')->count(),
                 'completed' => $queues->where('status', 'completed')->count(),
+                'cancelled' => $queues->where('status', 'cancelled')->count(),
             ]);
         }
         
-        return view('queues.index', compact('queues'));
+        return view('queues.index', compact('queues', 'date'));
     }
 
+    /**
+     * Form tambah antrian baru
+     */
     public function create()
     {
         $patients = Patient::orderBy('name')->get();
         return view('queues.create', compact('patients'));
     }
 
+    /**
+     * Simpan antrian baru
+     */
     public function store(Request $request)
     {
         try {
@@ -59,7 +70,7 @@ class QueueController extends Controller
                 'complaint' => 'nullable|string|max:1000',
             ]);
 
-            // Get last queue number for the date
+            // Nomor antrian berikutnya
             $lastQueue = Queue::whereDate('queue_date', $validated['queue_date'])
                              ->max('queue_number');
             
@@ -68,15 +79,26 @@ class QueueController extends Controller
 
             $queue = Queue::create($validated);
 
-            // TIDAK ADA BROADCAST - Sistem lebih sederhana
+            // 🔔 Tambah notifikasi baru
+            $patient = Patient::find($validated['patient_id']);
+            NotificationHelper::add(
+                'success',
+                'Antrian Baru Ditambahkan',
+                'Pasien ' . ($patient->name ?? 'Tidak diketahui') . ' mendapat nomor antrian #' . $queue->queue_number,
+                [
+                    'url' => route('queues.show', $queue->id),
+                    'queue_number' => $queue->queue_number,
+                    'queue_date' => $queue->queue_date,
+                ]
+            );
 
             return redirect()
                 ->route('queues.index', ['date' => $validated['queue_date']])
                 ->with('success', 'Antrian berhasil ditambahkan dengan nomor: ' . $queue->queue_number);
-                
+
         } catch (\Exception $e) {
             \Log::error('Error creating queue: ' . $e->getMessage());
-            
+
             return redirect()
                 ->back()
                 ->withInput()
@@ -84,15 +106,19 @@ class QueueController extends Controller
         }
     }
 
+    /**
+     * Update status antrian (via AJAX)
+     */
     public function updateStatus(Request $request, Queue $queue)
     {
         try {
             $validated = $request->validate([
-                'status' => 'required|in:waiting,in_progress,completed,cancelled'
+                'status' => 'required|in:waiting,in_progress,completed,cancelled',
             ]);
 
             $queue->status = $validated['status'];
-            
+
+            // Tanggal aktivitas
             if ($validated['status'] === 'in_progress') {
                 $queue->called_at = now();
             } elseif ($validated['status'] === 'completed') {
@@ -101,50 +127,56 @@ class QueueController extends Controller
 
             $queue->save();
 
-            // TIDAK ADA BROADCAST - User refresh untuk lihat update
+            // 🔔 Tambah notifikasi perubahan status
+            NotificationHelper::add(
+                'info',
+                'Status Antrian Diperbarui',
+                'Nomor antrian #' . $queue->queue_number . ' sekarang berstatus ' . strtoupper($queue->status),
+                [
+                    'url' => route('queues.show', $queue->id),
+                    'queue_number' => $queue->queue_number,
+                    'status' => $queue->status,
+                ]
+            );
 
             return response()->json([
                 'success' => true,
                 'message' => 'Status antrian berhasil diperbarui.',
-                'queue' => $queue->load('patient')
+                'queue' => $queue->load('patient'),
             ]);
-            
         } catch (\Exception $e) {
             \Log::error('Error updating queue status: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal memperbarui status: ' . $e->getMessage()
+                'message' => 'Gagal memperbarui status: ' . $e->getMessage(),
             ], 500);
         }
     }
 
+    /**
+     * Statistik antrian (dipanggil via AJAX)
+     */
     public function getStatistics(Request $request)
     {
         $date = $request->input('date', today()->format('Y-m-d'));
-        
         $queues = Queue::whereDate('queue_date', $date)->get();
-        
+
         return response()->json([
             'total' => $queues->count(),
             'waiting' => $queues->where('status', 'waiting')->count(),
             'in_progress' => $queues->where('status', 'in_progress')->count(),
             'completed' => $queues->where('status', 'completed')->count(),
+            'cancelled' => $queues->where('status', 'cancelled')->count(),
         ]);
     }
 
-    // TAMBAHAN INI: Method untuk show detail queue
+    /**
+     * Detail antrian tertentu
+     */
     public function show(Queue $queue)
     {
-        // Load relasi patient dan data terkait (misalnya medical record terkait jika ada)
         $queue->load('patient');
-        
-        // Optional: Authorize jika pakai policy
-        // $this->authorize('view', $queue);
-        
-        // Optional: Ambil data tambahan, misalnya medical records terkait queue ini
-        // $relatedRecords = MedicalRecord::where('queue_id', $queue->id)->get(); // Asumsi ada kolom queue_id
-        
-        return view('queues.show', compact('queue')); // Render view detail
+        return view('queues.show', compact('queue'));
     }
 }
