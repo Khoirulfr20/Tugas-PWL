@@ -12,13 +12,13 @@
 <form method="POST" action="{{ route('login') }}" id="loginForm">
     @csrf
     
-    <!-- EMAIL INPUT -->
+     <!-- EMAIL INPUT -->
     <div class="form-group">
         <label for="email" class="form-label">
-            <i class="fas fa-envelope text-muted"></i>
+            <i class="fas fa-envelope"></i>
             Email Address
         </label>
-        <input type="email" 
+        <input type="text" 
                class="form-control @error('email') is-invalid @enderror" 
                id="email" 
                name="email" 
@@ -29,7 +29,7 @@
                placeholder="Masukkan email Anda">
         
         @error('email')
-            <div class="invalid-feedback">
+            <div class="invalid-feedback d-block">
                 <i class="fas fa-exclamation-circle me-1"></i>
                 {{ $message }}
             </div>
@@ -39,10 +39,10 @@
     <!-- PASSWORD INPUT -->
     <div class="form-group">
         <label for="password" class="form-label">
-            <i class="fas fa-lock text-muted"></i>
+            <i class="fas fa-lock"></i>
             Password
         </label>
-        <div class="position-relative">
+        <div class="password-wrapper">
             <input type="password" 
                    class="form-control @error('password') is-invalid @enderror" 
                    id="password" 
@@ -53,14 +53,14 @@
             
             <!-- Password Toggle Button -->
             <button type="button" 
-                    class="btn btn-link position-absolute end-0 top-50 translate-middle-y password-toggle"
-                    style="border: none; background: none; z-index: 10; margin-right: 10px;">
-                <i class="fas fa-eye text-muted"></i>
+                    class="password-toggle"
+                    tabindex="-1">
+                <i class="fas fa-eye"></i>
             </button>
         </div>
         
         @error('password')
-            <div class="invalid-feedback">
+            <div class="invalid-feedback d-block">
                 <i class="fas fa-exclamation-circle me-1"></i>
                 {{ $message }}
             </div>

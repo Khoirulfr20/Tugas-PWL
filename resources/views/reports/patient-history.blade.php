@@ -43,20 +43,20 @@
                             <td>: <strong>{{ $patient->name }}</strong></td>
                         </tr>
                         <tr>
-                            <th>No. Rekam Medis</th>
-                            <td>: <span class="badge bg-dark">{{ $patient->medical_record_number }}</span></td>
+                            <th>No. Pasien</th>
+                            <td>: <span class="badge bg-dark">{{ $patient->patient_number }}</span></td>
                         </tr>
                         <tr>
                             <th>Tanggal Lahir</th>
-                            <td>: {{ $patient->date_of_birth ? \Carbon\Carbon::parse($patient->date_of_birth)->format('d/m/Y') : '-' }}</td>
+                            <td>: {{ $patient->created_at->format('d M Y') }}</td>
                         </tr>
                         <tr>
                             <th>Usia</th>
-                            <td>: {{ $patient->date_of_birth ? \Carbon\Carbon::parse($patient->date_of_birth)->age : '-' }} tahun</td>
+                            <td>: {{ $patient->age ?? '-' }} tahun</td>
                         </tr>
                         <tr>
                             <th>Jenis Kelamin</th>
-                            <td>: {{ $patient->gender == 'male' ? 'Laki-laki' : 'Perempuan' }}</td>
+                            <td>: {{ $patient->gender === 'L' ? 'Laki-laki' : 'Perempuan' }}</td>
                         </tr>
                     </table>
                 </div>

@@ -207,7 +207,8 @@
             <!-- Brand/Logo -->
             <a class="navbar-brand" href="{{ route('dashboard') }}">
                 <i class="fas fa-tooth"></i>
-                Rekam Medis Gigi
+                Sistem Informasi Rumah Sakit Gigi dan Mulut UNDIP
+            
             </a>
             
             <!-- Mobile Menu Toggle -->

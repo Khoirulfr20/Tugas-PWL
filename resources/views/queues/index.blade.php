@@ -9,9 +9,6 @@
     <h1 class="h2">
         <i class="fas fa-list-ol me-2 text-primary"></i>
         Kelola Antrian Pasien
-        <span class="badge bg-info ms-2" id="refresh-badge">
-            <i class="fas fa-sync-alt"></i> Auto-refresh
-        </span>
     </h1>
     <div class="btn-toolbar mb-2 mb-md-0">
         <a href="{{ route('queues.create') }}" class="btn btn-primary">
@@ -82,7 +79,7 @@
         <div class="form-check form-switch">
             <input class="form-check-input" type="checkbox" id="autoRefreshToggle" checked>
             <label class="form-check-label" for="autoRefreshToggle">
-                <small>Auto-refresh (30 detik)</small>
+                <small>Auto-refresh</small>
             </label>
         </div>
     </div>

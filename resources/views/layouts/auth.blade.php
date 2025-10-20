@@ -24,7 +24,7 @@
             --danger-color: #dc3545;
             --warning-color: #ffc107;
             --info-color: #0dcaf0;
-            --light-color: #f8f9fa;
+            --light-color: #495057;
             --dark-color: #212529;
             --dental-blue: #1e40af;
             --dental-light: #dbeafe;
@@ -141,6 +141,10 @@
             padding: 2.5rem;
         }
 
+        /* ============================================ */
+        /* FORM STYLES - FIXED FOR VISIBILITY */
+        /* ============================================ */
+        
         .form-group {
             margin-bottom: 1.5rem;
         }
@@ -152,27 +156,46 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            font-size: 0.95rem;
         }
 
+        .form-label i {
+            color: #6c757d;
+        }
+
+        /* INPUT STYLES - TEXT CLEARLY VISIBLE */
         .form-control {
             border: 2px solid #e9ecef;
             border-radius: 12px;
             padding: 12px 16px;
             font-size: 1rem;
             transition: all 0.3s ease;
-            background: #f8f9fa;
+            background: #ffffff;
+            color: #212529;
+            font-weight: 400;
         }
 
+        /* Placeholder Style */
+        .form-control::placeholder {
+            color: #6c757d;
+            opacity: 0.6;
+        }
+
+        /* Focus State */
         .form-control:focus {
             border-color: var(--primary-color);
             box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
-            background: white;
+            background: #ffffff;
+            color: #212529;
             transform: translateY(-2px);
+            outline: none;
         }
 
+        /* Invalid State */
         .form-control.is-invalid {
             border-color: var(--danger-color);
             background: #fff5f5;
+            color: #212529;
         }
 
         .invalid-feedback {
@@ -180,7 +203,105 @@
             font-size: 0.875rem;
             color: var(--danger-color);
             margin-top: 0.5rem;
+            animation: shake 0.5s ease-in-out;
         }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        /* ============================================ */
+        /* PASSWORD TOGGLE BUTTON */
+        /* ============================================ */
+        
+        .password-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .password-wrapper .form-control {
+            padding-right: 45px;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            padding: 8px;
+            cursor: pointer;
+            color: #6c757d;
+            transition: all 0.3s ease;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .password-toggle:hover {
+            color: #495057;
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .password-toggle:focus {
+            outline: none;
+            color: var(--primary-color);
+        }
+
+        .password-toggle i {
+            font-size: 1.1rem;
+            pointer-events: none;
+        }
+
+        /* ============================================ */
+        /* AUTOFILL FIX */
+        /* ============================================ */
+        
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus,
+        input:-webkit-autofill:active {
+            -webkit-box-shadow: 0 0 0 30px white inset !important;
+            -webkit-text-fill-color: #212529 !important;
+            transition: background-color 5000s ease-in-out 0s;
+        }
+
+        /* ============================================ */
+        /* CHECKBOX & REMEMBER ME */
+        /* ============================================ */
+
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-check-input {
+            width: 1.2em;
+            height: 1.2em;
+            cursor: pointer;
+        }
+
+        .form-check-input:checked {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .form-check-label {
+            cursor: pointer;
+            color: var(--dental-light);
+            font-size: 0.95rem;
+        }
+
+        /* ============================================ */
+        /* BUTTON STYLES */
+        /* ============================================ */
 
         .btn-login {
             background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
@@ -224,31 +345,6 @@
             height: 300px;
         }
 
-        .remember-me {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .form-check-input:checked {
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
-        }
-
-        .auth-footer {
-            text-align: center;
-            padding: 1.5rem 2.5rem 2.5rem;
-            border-top: 1px solid #e9ecef;
-            background: #f8f9fa;
-        }
-
-        .auth-footer p {
-            margin: 0;
-            color: #6c757d;
-            font-size: 0.9rem;
-        }
-
         .loading-spinner {
             display: none;
             width: 20px;
@@ -273,7 +369,27 @@
             opacity: 0.7;
         }
 
-        /* Responsive Design */
+        /* ============================================ */
+        /* FOOTER */
+        /* ============================================ */
+
+        .auth-footer {
+            text-align: center;
+            padding: 1.5rem 2.5rem 2.5rem;
+            border-top: 1px solid #e9ecef;
+            background: #f8f9fa;
+        }
+
+        .auth-footer p {
+            margin: 0;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        /* ============================================ */
+        /* RESPONSIVE DESIGN */
+        /* ============================================ */
+
         @media (max-width: 576px) {
             .auth-container {
                 max-width: 100%;
@@ -293,10 +409,16 @@
             }
         }
 
-        /* Dark mode support */
+        /* ============================================ */
+        /* DARK MODE SUPPORT */
+        /* ============================================ */
+
         @media (prefers-color-scheme: dark) {
             .auth-card {
                 background: rgba(30, 30, 30, 0.95);
+            }
+            
+            .form-label {
                 color: #f8f9fa;
             }
             
@@ -308,18 +430,15 @@
             
             .form-control:focus {
                 background: #1a202c;
+                color: #f8f9fa;
             }
-        }
 
-        /* Animation for error messages */
-        .invalid-feedback {
-            animation: shake 0.5s ease-in-out;
-        }
-
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
+            input:-webkit-autofill,
+            input:-webkit-autofill:hover,
+            input:-webkit-autofill:focus {
+                -webkit-box-shadow: 0 0 0 30px #2d3748 inset !important;
+                -webkit-text-fill-color: #f8f9fa !important;
+            }
         }
 
         /* Success animation */
@@ -418,11 +537,15 @@
                 });
             });
 
-            // Password visibility toggle (if exists)
+            // ============================================
+            // PASSWORD TOGGLE FUNCTIONALITY - FIXED
+            // ============================================
             const passwordToggles = document.querySelectorAll('.password-toggle');
             passwordToggles.forEach(toggle => {
-                toggle.addEventListener('click', function() {
-                    const input = this.parentElement.querySelector('input');
+                toggle.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const wrapper = this.closest('.password-wrapper');
+                    const input = wrapper.querySelector('input');
                     const icon = this.querySelector('i');
                     
                     if (input.type === 'password') {
@@ -443,6 +566,7 @@
                 setTimeout(() => {
                     alert.style.opacity = '0';
                     alert.style.transform = 'translateY(-20px)';
+                    alert.style.transition = 'all 0.3s ease';
                     setTimeout(() => {
                         alert.remove();
                     }, 300);
@@ -458,6 +582,7 @@
                 if (form) {
                     const submitBtn = form.querySelector('button[type="submit"]');
                     if (submitBtn && !submitBtn.disabled) {
+                        e.preventDefault();
                         submitBtn.click();
                     }
                 }
