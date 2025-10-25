@@ -295,7 +295,7 @@
 
         .form-check-label {
             cursor: pointer;
-            color: var(--dental-light);
+            color: var(--dark-color);
             font-size: 0.95rem;
         }
 
