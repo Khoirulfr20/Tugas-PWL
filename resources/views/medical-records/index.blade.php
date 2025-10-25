@@ -10,11 +10,6 @@
         <i class="fas fa-file-medical me-2 text-primary"></i>
         Rekam Medis Pasien
     </h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <a href="{{ route('medical-records.create') }}" class="btn btn-primary">
-            <i class="fas fa-plus me-2"></i>Tambah Rekam Medis Baru
-        </a>
-    </div>
 </div>
 
 <!-- STATISTICS ROW -->

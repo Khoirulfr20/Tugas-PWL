@@ -10,15 +10,6 @@
         <i class="fas fa-tachometer-alt me-2 text-primary"></i>
         Dashboard
     </h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <div class="btn-group me-2">
-            <button type="button" class="btn btn-sm btn-outline-secondary">
-                <i class="fas fa-download"></i> Export
-            </button>
-            <button type="button" class="btn btn-sm btn-outline-secondary">
-                <i class="fas fa-print"></i> Print
-            </button>
-        </div>
         <a href="{{ route('patients.create') }}" class="btn btn-sm btn-primary">
             <i class="fas fa-plus"></i> Tambah Pasien
         </a>
@@ -220,7 +211,7 @@
                     <div class="me-3">
                         <small class="text-muted">
                             <i class="fas fa-sync-alt me-1" id="refresh-icon"></i>
-                            Auto-refresh (60s)
+                            Auto-refresh
                         </small>
                     </div>
                     <a href="{{ route('queues.index') }}" class="btn btn-sm btn-primary">
@@ -346,70 +337,6 @@
     </div>
 </div>
 
-<!-- QUICK ACTIONS ROW -->
-<div class="row">
-    <div class="col-12">
-        <div class="card shadow">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">
-                    <i class="fas fa-bolt me-2"></i>
-                    Aksi Cepat
-                </h6>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-3 col-sm-6 mb-3">
-                        <a href="{{ route('patients.create') }}" class="btn btn-outline-primary btn-lg w-100 h-100">
-                            <div class="text-center py-3">
-                                <i class="fas fa-user-plus fa-2x mb-2"></i>
-                                <br>
-                                <strong>Pasien Baru</strong>
-                                <br>
-                                <small class="text-muted">Daftarkan pasien baru</small>
-                            </div>
-                        </a>
-                    </div>
-                    
-                    <div class="col-md-3 col-sm-6 mb-3">
-                        <a href="{{ route('queues.create') }}" class="btn btn-outline-success btn-lg w-100 h-100">
-                            <div class="text-center py-3">
-                                <i class="fas fa-list-plus fa-2x mb-2"></i>
-                                <br>
-                                <strong>Antrian Baru</strong>
-                                <br>
-                                <small class="text-muted">Tambah ke antrian</small>
-                            </div>
-                        </a>
-                    </div>
-                    
-                    <div class="col-md-3 col-sm-6 mb-3">
-                        <a href="#" class="btn btn-outline-info btn-lg w-100 h-100">
-                            <div class="text-center py-3">
-                                <i class="fas fa-file-medical-alt fa-2x mb-2"></i>
-                                <br>
-                                <strong>Rekam Medis</strong>
-                                <br>
-                                <small class="text-muted">Input pemeriksaan</small>
-                            </div>
-                        </a>
-                    </div>
-                    
-                    <div class="col-md-3 col-sm-6 mb-3">
-                        <a href="#" class="btn btn-outline-warning btn-lg w-100 h-100">
-                            <div class="text-center py-3">
-                                <i class="fas fa-chart-bar fa-2x mb-2"></i>
-                                <br>
-                                <strong>Laporan</strong>
-                                <br>
-                                <small class="text-muted">Lihat statistik</small>
-                            </div>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 @endsection
 
 @push('styles')

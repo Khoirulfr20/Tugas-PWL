@@ -217,67 +217,67 @@
             </button>
           
 <!-- Right Side Menu -->
-<div class="navbar-nav ms-auto d-flex align-items-center">            
-           <!-- 🔔 Notification Dropdown -->
-<div class="nav-item dropdown me-3">
-    <a class="nav-link position-relative" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-        <i class="fas fa-bell"></i>
+                <div class="navbar-nav ms-auto d-flex align-items-center">            
+                        <!-- 🔔 Notification Dropdown -->
+                <div class="nav-item dropdown me-3">
+                    <a class="nav-link position-relative" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-bell"></i>
 
-        {{-- Badge Jumlah Notifikasi Baru --}}
-        @php
-            $unreadCount = \App\Helpers\NotificationHelper::getUnreadCount();
-        @endphp
-        @if($unreadCount > 0)
-            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                {{ $unreadCount }}
-            </span>
-        @endif
-    </a>
+                        {{-- Badge Jumlah Notifikasi Baru --}}
+                        @php
+                            $unreadCount = \App\Helpers\NotificationHelper::getUnreadCount();
+                        @endphp
+                        @if($unreadCount > 0)
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                {{ $unreadCount }}
+                            </span>
+                        @endif
+                    </a>
 
-    <ul class="dropdown-menu dropdown-menu-end shadow-lg" style="min-width: 300px;">
-        <li class="dropdown-header fw-bold">
-            Notifikasi Terbaru
-        </li>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-lg" style="min-width: 300px;">
+                        <li class="dropdown-header fw-bold">
+                            Notifikasi Terbaru
+                        </li>
 
-        @php
-            $notifications = array_slice(array_reverse(\App\Helpers\NotificationHelper::getAll()), 0, 5);
-        @endphp
+                        @php
+                            $notifications = array_slice(array_reverse(\App\Helpers\NotificationHelper::getAll()), 0, 5);
+                        @endphp
 
-        @forelse($notifications as $notif)
-            <li>
-                <a href="{{ route('notifications.index') }}" class="dropdown-item d-flex align-items-start">
-                    <div class="me-2">
-                        <i class="{{ \App\Helpers\NotificationHelper::getIcon($notif['type']) }} text-primary"></i>
-                    </div>
-                    <div class="flex-grow-1">
-                        <div class="small fw-bold text-dark">
-                            {{ $notif['title'] }}
-                        </div>
-                        <div class="small text-muted">
-                            {{ $notif['message'] }}
-                        </div>
-                        <div class="small text-muted">
-                            <i class="far fa-clock"></i> {{ $notif['time_ago'] }}
-                        </div>
-                    </div>
-                </a>
-            </li>
-            <li><hr class="dropdown-divider"></li>
-        @empty
-            <li>
-                <div class="dropdown-item text-center text-muted">
-                    <i class="fas fa-bell-slash"></i> Tidak ada notifikasi
+                        @forelse($notifications as $notif)
+                            <li>
+                                <a href="{{ route('notifications.index') }}" class="dropdown-item d-flex align-items-start">
+                                    <div class="me-2">
+                                        <i class="{{ \App\Helpers\NotificationHelper::getIcon($notif['type']) }} text-primary"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="small fw-bold text-dark">
+                                            {{ $notif['title'] }}
+                                        </div>
+                                        <div class="small text-muted">
+                                            {{ $notif['message'] }}
+                                        </div>
+                                        <div class="small text-muted">
+                                            <i class="far fa-clock"></i> {{ $notif['time_ago'] }}
+                                        </div>
+                                    </div>
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                        @empty
+                            <li>
+                                <div class="dropdown-item text-center text-muted">
+                                    <i class="fas fa-bell-slash"></i> Tidak ada notifikasi
+                                </div>
+                            </li>
+                        @endforelse
+
+                        <li>
+                            <a class="dropdown-item text-center fw-bold text-primary" href="{{ route('notifications.index') }}">
+                                <i class="fas fa-list"></i> Lihat Semua
+                            </a>
+                        </li>
+                    </ul>
                 </div>
-            </li>
-        @endforelse
-
-        <li>
-            <a class="dropdown-item text-center fw-bold text-primary" href="{{ route('notifications.index') }}">
-                <i class="fas fa-list"></i> Lihat Semua
-            </a>
-        </li>
-    </ul>
-</div>
 
 
                 <!-- User Dropdown -->
@@ -288,18 +288,6 @@
                         <span class="badge bg-primary ms-1">{{ ucfirst(auth()->user()->role) }}</span>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end">
-                        <li>
-                            <a class="dropdown-item" href="#">
-                                <i class="fas fa-user-cog me-2"></i>Profile
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item" href="#">
-                                <i class="fas fa-cog me-2"></i>Settings
-                            </a>
-                        </li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li>
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
                                 <button type="submit" class="dropdown-item text-danger">
