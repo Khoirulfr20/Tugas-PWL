@@ -98,19 +98,6 @@
             Lupa password? Hubungi administrator
         </small>
     </p>
-    
-    <!-- DEMO CREDENTIALS (Untuk Development/Testing) -->
-    @if(app()->environment('local'))
-    <div class="alert alert-info mt-3">
-        <strong><i class="fas fa-key me-2"></i>Demo Credentials:</strong>
-        <br>
-        <small>
-            <strong>Admin:</strong> admin@dental.com / admin123<br>
-            <strong>Dokter:</strong> doctor@dental.com / doctor123<br>
-            <strong>Petugas:</strong> petugas@dental.com / petugas123
-        </small>
-    </div>
-    @endif
 </div>
 @endsection
 
